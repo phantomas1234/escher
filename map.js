@@ -75,13 +75,14 @@ function visualizeit(data, flux) {
     
     d3.select("#svg-container").remove();
 
+	var theZoom = d3.behavior.zoom().scaleExtent([1, 15]).on("zoom", zoom);
     var svg = d3.select("body").append("div").attr("id","svg-container")
         .attr("style", "width:"+width+"px;height:"+height+"px;margin:0px auto")// ;border:3px solid black;")
         .append("svg")
         .attr("width", width)
         .attr("height", height)
         .append("g")
-        .call(d3.behavior.zoom().scaleExtent([1, 15]).on("zoom", zoom))
+        .call(theZoom)
         .append("g");
 
     svg.append("style")
@@ -233,6 +234,21 @@ function visualizeit(data, flux) {
         });
         return path
     }
+
+	d3.select('body').call(d3.keybinding()
+						   .on("=", keyZoom(1.5))
+						   .on("-", keyZoom(0.5)));
+
+	function keyZoom(z) {
+		return function(event, modifiers) {
+			event.preventDefault();
+			console.log(theZoom);
+			if (modifiers=="⌘" || modifiers=="⌃") {
+				theZoom.scale(z*theZoom.scale());
+				svg.attr("transform", "translate(0)scale(" + theZoom.scale() + ")");
+			}
+		};
+	}
 
     function zoom() {
         svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
