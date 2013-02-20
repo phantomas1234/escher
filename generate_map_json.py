@@ -72,13 +72,17 @@ def read_simpheny(map):
     # in Layer_0:?
     # <g id="succinate transport via diffusion (extracellular to periplasm)" style="color-interpolation:auto;color-rendering:auto;fill:black;fill-opacity:1;font-family:sans-serif;font-size:12;font-style:normal;font-weight:normal;image-rendering:auto;shape-rendering:auto;stroke:black;stroke-dasharray:none;stroke-dashoffset:0;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:10;stroke-opacity:1;stroke-width:1;text-rendering:auto"><g style="fill:rgb(170,170,255);stroke:rgb(170,170,255)"><path d="M5346.07421875 3115.5 L5346.07421875 3122.5 L5459.07421875 3122.5 L5459.07421875 3115.5 Z" style="stroke:none"></path></g><g style="fill:rgb(0,0,64);stroke:rgb(0,0,64);stroke-linecap:round;stroke-linejoin:round"><path d="M5346.07421875 3115.5 L5346.07421875 3122.5 L5459.07421875 3122.5 L5459.07421875 3115.5 Z" style="fill:none"></path></g><g style="fill:rgb(170,170,255);stroke:rgb(170,170,255)"><path d="M5471.07421875 3119 L5456.07421875 3126 L5456.07421875 3112 ZM5334.07421875 3119 L5349.07421875 3126 L5349.07421875 3112 Z" style="stroke:none"></path></g><g style="fill:rgb(0,0,64);stroke:rgb(0,0,64)"><path d="M5471.07421875 3119 L5456.07421875 3126 L5456.07421875 3112 ZM5334.07421875 3119 L5349.07421875 3126 L5349.07421875 3112 Z" style="fill:none"></path></g></g>
     
-    reaction_paths = []
+    reaction_paths = []; last_path = ""
     for g in svg.find(id="Layer_5").children:
         for h in g.find_all('path'):
             this_path = {'name': g.attrs['id'],
                          'id': reaction_name_to_id(g.attrs['id']),
                          'd': h.attrs['d'],
                          'class': 'fill-arrow'} 
+            # check for doubles, which often appear in simpheny maps
+            if this_path["d"][0:15]==last_path[0:15]:
+                continue 
+            last_path = this_path["d"]
             reaction_paths.append(this_path)
     data["reaction_paths"] = reaction_paths
     
