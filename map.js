@@ -30,6 +30,9 @@ function visualizeit(data, flux, flux2) {
     var decimal_format_3 = d3.format('.3f');
     var has_flux = false;
     var has_flux_comparison = false;
+
+	var connection_rect_class = 'connection_popup';
+
     if (flux) {
 	has_flux = true;
         data.reaction_paths = data.reaction_paths.map( function(o) {
@@ -233,41 +236,98 @@ function visualizeit(data, flux, flux2) {
 			.attr("id", "metabolite-circles")
 			.selectAll("circle")
 			.data(data.metabolite_circles)
-			.enter().append("circle")
-			.attr("r", function (d) { return scale(d.r); })
-			.attr("transform", function(d){return "translate("+x_scale(d.cx)+","+y_scale(d.cy)+")";})
-			.on("mouseover", show_connections_circle);
+			.enter()
+			.append("g")
+			.attr("class","metabolite-group")
+			.call(create_metabolite_group_circle);
 	}
 	else if (data.hasOwnProperty("metabolite_paths")) {
 		console.log('metabolite paths');
-		svg.append("g")
+		g = svg.append("g")
 			.attr("id", "metabolite-paths")
 			.selectAll("path")
 			.data(data.metabolite_paths)
-			.enter().append("path")
-			.attr("d", function(d) { return scale_path(d.d, x_scale, y_scale); });
+			.enter()
+			.append("g")
+			.attr("class","metabolite-group")
+			.call(create_metabolite_group_path);
+	}
+	else { console.log('neither') }
 
-		svg.append("g")
-			.attr("id", "metabolite-path-selection-rectangles")
-			.selectAll('circle')
-			.data(data.metabolite_paths)
-			.enter() .append('circle')
+	function create_metabolite_group_circle(selection) {
+		selection.append("circle")
+			.attr("r", function (d) { return scale(d.r); })
+			.attr("cx", function (d) { return x_scale(d.cx); })
+			.attr("cy", function (d) { return +y_scale(d.cy); });
+		selection.append("circle")
 			.attr('style','fill:white;stroke:none;opacity:0.0;')
+			.style('pointer-events','fill')
+			.attr('r',scale(60))
+			.attr("cx", function (d) { return x_scale(d.cx); })
+			.attr("cy", function (d) { return y_scale(d.cy); })
+			.on("mouseover", show_connections_circle) 
+			.on("mouseout", hide_connections);
+	}
+	function create_metabolite_group_path(selection) {
+		selection.append("path")
+			.attr("d", function(d) { return scale_path(d.d, x_scale, y_scale); });
+		add_select_circle(selection);
+		selection
+			.append('circle')
+			.attr('style','fill:white;stroke:none;opacity:0.0;')
+			.style('pointer-events','fill')
 			.attr('r',scale(60))
 			.attr("transform", function(d) {
 				ret = x_y_for_path(d.d);
 				return "translate("+x_scale(ret.x)+","+y_scale(ret.y)+")";
 			})
-			.attr('id', function(d){ return d.id + '_circle';} )
-			.on("mouseover", show_connections_path);
+			.on("mouseover", show_connections_path)
+			.on("mouseout", hide_connections); 
 	}
-	else { console.log('neither') }
 
+	function show_connections_path(d) { 
+		console.log('show connections');
+		var ret = x_y_for_path(d.d);
+		show_connections(ret.x, ret.y, this.parentNode, d.id); 
+	}
+	function show_connections_circle(d) { show_connections(d.cx, d.cy, this.parentNode, d.id); }
+	function show_connections(x, y, group, met_id) {
+		// met_connection_id = 'connection_' + met_id.replace(/[|&;$%@"<>()+, \[\]:]/g, "");
+	
+		var w=scale(400), h=scale(400);
+		sel = d3.select(group).select('.' + connection_rect_class);
+		if (sel.empty()) {
+			d3.select(group)
+				.append('rect')
+				.attr('class', connection_rect_class)
+				.attr('width', w)
+				.attr('height', h)
+				.attr('transform', "translate("+(x_scale(x)-w/2)+","+(y_scale(y)-h/2)+")")
+				.attr("style", "stroke-width: "+scale(6)+";fill:white;stroke:grey;opacity:0.5;visibility:visible;")
+				.style('pointer-events','none');
+				// .on("mouseout",hide_connections(met_id, met_connection_id)); 
+		} else {
+			sel.style("visibility","visible");
+		}
+		d3.select(group.parentNode).selectAll('g').sort(function (a, b) { 
+			if (a.id != met_id) return -1;
+			else return 1;
+		});
+	}
 
-	// layer for connection popups
-	svg.append('g').attr('id','connection_popups');
+	function hide_connections(d) {
+		// met_connection_id = 'connection_' + d.id.replace(/[|&;$%@"<>()+, \[\]:]/g, "");
+		d3.select(this.parentNode).select('.' + connection_rect_class).style('visibility','hidden');
+	}
 
-
+	function x_y_for_path(path) {
+		var array  = path.match(/([0-9-.]+),?\s*([0-9-.]+)/);
+		var x = array[1], y = array[2];
+		return {
+			'x': x,
+			'y': y
+		};  
+	}
 
     function scale_decimals(path, scale_fn, precision) {
         var str = d3.format("."+String(precision)+"f")
@@ -292,51 +352,6 @@ function visualizeit(data, flux, flux2) {
         svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
     }
 
-	function show_connections_path(d) { 
-		console.log('show connections');
-		d3.select(this)// .attr('fill','red')
-			.attr('style','pointer-events:none;');
-		console.log('no pointer events');
-		var ret = x_y_for_path(d.d);
-		show_connections(ret.x, ret.y, d.id); // , this.parentNode); 
-	}
-	function show_connections_circle(d) { show_connections_circle(d.cx, d.cy, d.id); }
-	function show_connections(x, y, met) {
-		met_id = 'connection_' + met.replace(/[|&;$%@"<>()+, \[\]:]/g, "");
-		var w=scale(400), h=scale(400);
-		sel = d3.selectAll('#' + met_id);
-		if (sel.empty()) {
-			d3.select('#connection_popups')
-				.append('rect')
-				.attr('id', met_id)
-				.attr('width', w)
-				.attr('height', h)
-				.attr('transform', "translate("+(x_scale(x)-w/2)+","+(y_scale(y)-h/2)+")")
-				.attr("style", "stroke-width: "+scale(6)+";fill:white;stroke:grey;opacity:0.5;visibility:visible;")
-				.style('pointer-events','none')
-				.on("mouseout",hide_connections(met_id)); 
-		} else {
-			sel.style("visibility","visible");
-		}
-		d3.select('#' + met_id).style('pointer-events','auto');
-	}
-
-	// function hide_connections_path(d) {
-	// 	hide_connections(d.id); }
-	// function hide_connections_circle(d) { hide_connections(d.id); }
-	function hide_connections(met_id) {
-		console.log('hide connections');
-		d3.selectAll('#' + met_id).style("visibility","hidden");
-		d3.selectAll('#' + met_id.replace('_circle', '')).style("pointer-events:all");
-	}
-	function x_y_for_path(path) {
-		var array  = path.match(/([0-9-.]+),?\s*([0-9-.]+)/);
-		var x = array[1], y = array[2];
-		return {
-			'x': x,
-			'y': y
-		};  
-	}
 }
 
 // 
