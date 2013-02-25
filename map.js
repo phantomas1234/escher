@@ -353,9 +353,3 @@ function visualizeit(data, flux, flux2) {
     }
 
 }
-
-// 
-// .attr("width", function(d){ return x_size_scale(d.width) })
-// .attr("height", function(d){ return y_size_scale(d.height) })
-// .attr("transform", function(d){return "translate("+x_scale(d.x)+","+y_scale(d.y)+")";})
-// .attr("style", function(d) { return "stroke-width: "+scale(8)+";fill:none;stroke:orange;" });
