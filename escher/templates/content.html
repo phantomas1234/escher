@@ -5,7 +5,7 @@
   <script src="{{jquery}}"></script>
   <script src="{{boot_js}}"></script>
 
-  <link rel="stylesheet" href="{{boot_css}}">
+  <link rel="stylesheet" href="{{boot_css}}"/>
   <link rel="stylesheet" href="{{escher_css}}"/>
 {% endblock %}
 
@@ -29,13 +29,13 @@
      // require.js is available: use it to load d3 and escher
      {% if dev %}
      requirejs.config({
-       baseUrl: '{{host}}/js/src',
+       baseUrl: '{{host}}escher/js/src',
        paths: {
 	 lib: '../../lib',
-	 d3: "{{ d3[:-3] }}"
+	 d3: "../../../{{ d3_rel[:-3] }}"
        }
      });
-     require(["d3", "Builder"], function(d3, Builder) {
+     require(["d3", "Builder", "utils"], function(d3, Builder, utils) {
        window.d3 = d3;
        {{ draw_js }}
      });
