@@ -10,3 +10,5 @@ Escher.egg-info/
 build/*
 env/*
 envset/*
+.idea
+visbio.egg-info
